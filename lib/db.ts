@@ -1,17 +1,35 @@
 import { Pool, PoolClient } from "pg";
 import { randomBytes } from "crypto";
+import { catalog } from "./stations";
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   max: 10,
 });
-export const places: readonly (readonly [string, number, number])[] = [
-  ["Copacabana", -22.9714, -43.1822],
-  ["Ipanema", -22.9848, -43.2028],
-  ["Leblon", -22.984, -43.222],
-  ["Botafogo", -22.949, -43.18],
-  ["Flamengo", -22.929, -43.174],
-  ["Centro", -22.907, -43.178],
-] as const;
+export const places: readonly (readonly [string, number, number])[] =
+  catalog.map((s) => [s.name, s.lat, s.lng] as const);
+export async function migrateUva(c: PoolClient) {
+  await c.query(
+    "CREATE TABLE IF NOT EXISTS schema_migrations(version int PRIMARY KEY)",
+  );
+  const applied = await c.query(
+    "SELECT version FROM schema_migrations WHERE version=1",
+  );
+  if (applied.rowCount) return;
+  const scenarios = await c.query("SELECT id FROM scenarios");
+  const uva = catalog[6];
+  for (const row of scenarios.rows) {
+    await c.query(
+      "INSERT INTO stations VALUES($1,7,$2,$3,$4,8) ON CONFLICT DO NOTHING",
+      [row.id, uva.name, uva.lat, uva.lng],
+    );
+    for (let n = 25; n <= 28; n++)
+      await c.query(
+        "INSERT INTO bikes VALUES($1,$2,7) ON CONFLICT DO NOTHING",
+        [row.id, "PDL-" + String(n).padStart(3, "0")],
+      );
+  }
+  await c.query("INSERT INTO schema_migrations VALUES(1)");
+}
 let ready: Promise<void> | undefined;
 export function init() {
   return (ready ??= (async () => {
@@ -28,7 +46,10 @@ CREATE TABLE IF NOT EXISTS trips(id bigserial PRIMARY KEY,visitor text REFERENCE
 CREATE UNIQUE INDEX IF NOT EXISTS one_visitor_trip ON trips(visitor) WHERE ended_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS one_bike_trip ON trips(scenario,bike) WHERE ended_at IS NULL;`);
       await seed(c, "shared");
-      await c.query("UPDATE stations SET lng=-43.18 WHERE id=4 AND lng IS NULL");
+      await migrateUva(c);
+      await c.query(
+        "UPDATE stations SET lng=-43.18 WHERE id=4 AND lng IS NULL",
+      );
       await c.query("COMMIT");
     } catch (e) {
       await c.query("ROLLBACK");

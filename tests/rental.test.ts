@@ -1,6 +1,7 @@
 import { test, before, beforeEach, after } from "node:test";
 import assert from "node:assert/strict";
 import {
+  migrateUva,
   init,
   pool,
   session,
@@ -90,4 +91,38 @@ test("viagem pertence ao visitante e cenários são isolados", async () => {
   assert.notEqual(ta.id, tb.id);
   await assert.rejects(transaction((c) => finish(c, b.id, Number(ta.id), 6)));
 });
-test('todas as estações têm coordenadas geográficas válidas',async()=>{const result=await pool.query("SELECT * FROM stations WHERE scenario='shared'");assert.equal(result.rows.length,6);for(const station of result.rows){assert.equal(typeof station.lat,'number');assert.equal(typeof station.lng,'number');assert.ok(station.lat>=-23.1&&station.lat<=-22.8);assert.ok(station.lng>=-43.3&&station.lng<=-43.1);}});
+test("todas as estações têm coordenadas geográficas válidas", async () => {
+  const result = await pool.query(
+    "SELECT * FROM stations WHERE scenario='shared'",
+  );
+  assert.equal(result.rows.length, 7);
+  for (const station of result.rows) {
+    assert.equal(typeof station.lat, "number");
+    assert.equal(typeof station.lng, "number");
+    assert.ok(station.lat >= -23.1 && station.lat <= -22.8);
+    assert.ok(station.lng >= -43.3 && station.lng <= -43.1);
+  }
+});
+test("migração UVA é idempotente e preserva viagem ativa", async () => {
+  const v = await session();
+  const t = await transaction((c) => start(c, v.id, "PDL-001"));
+  await pool.query(
+    "DELETE FROM bikes WHERE id IN ('PDL-025','PDL-026','PDL-027','PDL-028')",
+  );
+  await pool.query("DELETE FROM stations WHERE id=7");
+  await pool.query("DELETE FROM schema_migrations WHERE version=1");
+  await transaction((c) => migrateUva(c));
+  await transaction((c) => migrateUva(c));
+  assert.equal(
+    (await pool.query("SELECT * FROM bikes WHERE scenario='shared'")).rowCount,
+    28,
+  );
+  assert.equal(
+    (
+      await pool.query("SELECT * FROM trips WHERE id=$1 AND ended_at IS NULL", [
+        t.id,
+      ])
+    ).rowCount,
+    1,
+  );
+});
