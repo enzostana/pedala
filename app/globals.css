@@ -589,3 +589,57 @@ footer {
     background: white;
   }
 }
+.stationphoto {
+  width: 100%;
+  aspect-ratio: 3/2;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #dce7b4;
+  display: block;
+}
+.station h3 {
+  margin: 10px 0 5px;
+}
+.stationid {
+  display: block;
+  color: #66756a;
+  font-size: 11px;
+}
+.maptools,
+.filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.maptools button,
+.filters button {
+  background: white;
+  font-size: 12px;
+  padding: 10px;
+}
+.filters [aria-pressed="true"] {
+  background: var(--ink);
+  color: white;
+}
+.mapoverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: var(--paper);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+.mapoverlay .map {
+  height: auto;
+  flex: 1;
+  min-height: 100px;
+}
+.stationdetail h2 {
+  font-size: 25px;
+  margin-top: 12px;
+}
+.stationdetail .btn {
+  font-size: 12px;
+}

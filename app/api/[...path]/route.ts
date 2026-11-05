@@ -8,6 +8,7 @@ import {
   finish,
   UserError,
 } from "@/lib/db";
+import { catalog } from "@/lib/stations";
 export const dynamic = "force-dynamic";
 async function handle(req: NextRequest) {
   try {
@@ -31,7 +32,10 @@ async function handle(req: NextRequest) {
       );
       data = {
         demo: v.scenario !== "shared",
-        stations: stations.rows,
+        stations: stations.rows.map((s) => ({
+          ...s,
+          ...catalog.find((x) => x.id === s.id),
+        })),
         trips: trips.rows,
       };
     } else if (req.method === "POST") {
@@ -73,7 +77,7 @@ async function handle(req: NextRequest) {
           ]);
           await c.query("DELETE FROM bikes WHERE scenario=$1", [sc]);
           let n = 0;
-          for (let i = 1; i <= 6; i++)
+          for (let i = 1; i <= catalog.length; i++)
             for (let j = 0; j < (i === 5 ? 8 : i === 6 ? 0 : 4); j++)
               await c.query("INSERT INTO bikes VALUES($1,$2,$3)", [
                 sc,

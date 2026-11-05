@@ -41,3 +41,5 @@ Para recuperação real, interrompa tráfego e aplicação antes de restaurar; m
 ## Limites
 
 Uma réplica, operação acadêmica de baixo volume. Não há limpeza automática de sessões, recuperação de bikes abandonadas, rate limiting distribuído ou tolerância à perda do servidor. Viagens abandonadas no modo compartilhado mantêm a bike em uso; para apresentação, prefira a demo isolada e reiniciável. Credenciais e backups são responsabilidade operacional do servidor.
+
+Migração UVA: versão 1 em schema_migrations, executada sob advisory lock na inicialização. Acrescenta estação 07 e bikes PDL-025 a PDL-028 aos cenários existentes. Antes da atualização 1.1.0, backup before-uva.dump foi restaurado e validado em banco separado.

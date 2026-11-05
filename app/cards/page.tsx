@@ -1,7 +1,7 @@
 import QRCode from "qrcode";
 export default async function Cards() {
   const cards = await Promise.all(
-    Array.from({ length: 24 }, async (_, i) => {
+    Array.from({ length: 28 }, async (_, i) => {
       const code = `PDL-${String(i + 1).padStart(3, "0")}`;
       const url = `${process.env.PUBLIC_URL || "https://pedala.enzostana.space"}/bikes/${code}`;
       return {

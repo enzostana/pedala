@@ -18,3 +18,7 @@ Painel administrativo, manutenção e redistribuição, cadastro, planos e cobra
 ## GitHub Projects
 
 Criação bloqueada pelos escopos atuais da credencial. Após habilitar `project`/`read:project`, criar quadro com Backlog, A fazer, Em andamento, Em validação e Concluído e adicionar estas Issues. Não houve criação de um Project remoto nesta entrega.
+
+## Incremento de localização
+
+[Issue #8](https://github.com/enzostana/pedala/issues/8): estação UVA, localização pontual, filtros, distâncias, mapa ampliável, imagens ilustrativas e nomes dos locais como título.

@@ -6,7 +6,7 @@ Bicicletas compartilhadas em uma simulação acadêmica no Rio de Janeiro. Desen
 
 ## O que funciona
 
-Landing page, mapa e lista de seis estações fictícias, acesso por visitante, scanner de QR, código manual, retirada confirmada, cronômetro persistente, devolução, histórico e disponibilidade consultada a cada dois segundos. A demo guiada possui cenário privado reiniciável; exploração livre compartilha bikes entre visitantes. Cada cenário começa com 24 bicicletas e 48 vagas, incluindo uma estação cheia e uma vazia.
+Landing page, mapa e lista de sete estações fictícias, acesso por visitante, scanner de QR, código manual, retirada confirmada, cronômetro persistente, devolução, histórico e disponibilidade consultada a cada dois segundos. A demo guiada possui cenário privado reiniciável; exploração livre compartilha bikes entre visitantes. Cada cenário começa com 28 bicicletas e 56 vagas, incluindo uma estação cheia e uma vazia.
 
 As bicicletas, travas e devoluções são simuladas. Não há pagamento, rastreamento GPS, cadastro ou administração. Histórico vinculado a cookie por 30 dias; apagar cookies ou mudar de navegador perde o acesso. Os dados continuam no banco. O serviço é acadêmico e não opera bicicletas físicas.
 
@@ -60,3 +60,9 @@ Mutações usam JSON e Origin do site; erros de negócio retornam 409 com `error
 [Implantação, backup e recuperação](docs/operacao.md) · [Backlog e Kanban](docs/backlog.md) · [Planejamento e evidências](docs/processo-agil.md) · [Roteiro da apresentação](docs/apresentacao.md).
 
 Os tiles do mapa dependem do OpenStreetMap e respeitam sua atribuição e cache. A lista continua disponível se o mapa não carregar. Câmera precisa de HTTPS e autorização; digitar o código é sempre uma alternativa. A leitura de cartões impressos em dispositivos físicos deve ser validada antes da apresentação.
+
+## Localização e imagens
+
+O mapa solicita uma posição ao abrir, com timeout de dez segundos, e usa a UVA como referência quando não há localização. A posição permanece em memória no navegador. Distâncias são aproximadas em linha reta. Filtros permitem encontrar bikes ou vagas; Como chegar abre um serviço externo com apenas o destino. Imagens geradas são ilustrações de estações fictícias, sem reprodução fiel das fachadas. A estação 07 é UVA — Rua Ibituruna, 108, com quatro bicicletas iniciais e oito vagas.
+
+A migração versionada acrescenta a UVA aos cenários anteriores sem encerrar viagens nem reposicionar bikes existentes. Repetir a inicialização não duplica a estação ou suas bicicletas.

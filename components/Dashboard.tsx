@@ -2,14 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
-const Map = dynamic(() => import("./Map"), {
-  ssr: false,
-  loading: () => (
-    <div className="map placeholder">
-      Carregando mapa… A lista de estações continua disponível.
-    </div>
-  ),
-});
+import Discovery from "./Discovery";
 export default function Dashboard() {
   const q = useSearchParams();
   const [data, setData] = useState<any>(null),
@@ -62,7 +55,8 @@ export default function Dashboard() {
     boot.current = true;
     (async () => {
       const initial = await load();
-      if (initial && !initial.demo && q.get("demo") === "1") await action("demo");
+      if (initial && !initial.demo && q.get("demo") === "1")
+        await action("demo");
     })();
   }, []);
   useEffect(() => {
@@ -185,34 +179,37 @@ export default function Dashboard() {
           </div>
         )}
         <div className="workspace">
-          <section>
-            <Map stations={stations} onSelect={select} />
-            <div className="mapcaption">
-              <span>● Disponibilidade atualizada a cada 2 segundos</span>
-              <span>6 estações simuladas</span>
-            </div>
-            <div className="stationgrid">
-              {stations.map((s: any) => (
-                <button
-                  className={
-                    "station " + (chosen?.id === s.id ? "selected" : "")
-                  }
-                  key={s.id}
-                  onClick={() => setChosen(s)}
-                >
-                  <span className="stationid">ESTAÇÃO 0{s.id} ↗</span>
-                  <h3>{s.name}</h3>
-                  <span>
-                    <b>{s.available}</b> bikes{" "}
-                    <span className="muted">
-                      / {s.capacity - s.available} vagas
-                    </span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
+          <Discovery stations={stations} onSelect={select} chosen={chosen} />
           <aside>
+            {chosen && (
+              <section className="panel stationdetail">
+                <img
+                  className="stationphoto"
+                  src={chosen.image}
+                  alt={chosen.imageAlt}
+                />
+                <p className="fine">Imagem ilustrativa</p>
+                <h2>{chosen.name}</h2>
+                <p className="stationid">
+                  Estação {String(chosen.id).padStart(2, "0")}
+                </p>
+                <p>{chosen.address}</p>
+                <a
+                  className="btn coral"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  href={
+                    "https://www.google.com/maps/dir/?api=1&destination=" +
+                    chosen.lat +
+                    "," +
+                    chosen.lng
+                  }
+                >
+                  Como chegar ↗
+                </a>
+              </section>
+            )}
+
             {active ? (
               <section className="panel ride">
                 <span className="badge">VIAGEM EM ANDAMENTO</span>
@@ -239,7 +236,8 @@ export default function Dashboard() {
                       disabled={s.available >= s.capacity}
                       value={s.id}
                     >
-                      {s.name} · {s.capacity - s.available} vagas
+                      {s.name} — Estação {String(s.id).padStart(2, "0")} ·{" "}
+                      {s.capacity - s.available} vagas
                     </option>
                   ))}
                 </select>

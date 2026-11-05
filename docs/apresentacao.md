@@ -12,3 +12,5 @@
 10. Mostrar testes de concorrência e explicar o que ficou no backlog: manutenção, administração, cadastro e cobrança.
 
 Antes da aula: verificar internet, HTTPS, saúde do servidor, impressão legível, câmera Android/iOS e permissões. Se a câmera falhar, digitar PDL-001. Se o mapa falhar, usar a lista. Se não houver internet, o serviço público não funcionará; preparar execução local previamente.
+
+Refino de localização: autorizar o navegador, mostrar distâncias e filtros, selecionar UVA — Rua Ibituruna, 108 e destacar o nome do local acima do código. Demonstrar o mapa ampliado e explicar que as imagens são ilustrativas. Sem autorização, usar o ponto da UVA.
