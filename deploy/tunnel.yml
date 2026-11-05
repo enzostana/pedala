@@ -1,0 +1,6 @@
+tunnel: 15b45382-763a-4b97-8810-5b622318c12d
+credentials-file: /run/secrets/tunnel.json
+ingress:
+  - hostname: pedala.enzostana.space
+    service: http://app:3000
+  - service: http_status:404
