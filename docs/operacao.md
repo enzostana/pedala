@@ -2,12 +2,12 @@
 
 ## Servidor atual
 
-Stack `pedala`, imagem `pedala:1.0.3`, aplicação no nó `s2951cetriov049`, PostgreSQL no manager e conector Cloudflare na rede overlay privada. Nenhuma porta do banco é publicada. DNS `pedala.enzostana.space` aponta para o túnel dedicado identificado em `deploy/tunnel.yml`.
+Stack `pedala`, imagem `pedala:1.1.1`, aplicação no nó `s2951cetriov049`, PostgreSQL no manager e conector Cloudflare na rede overlay privada. Nenhuma porta do banco é publicada. DNS `pedala.enzostana.space` aponta para o túnel dedicado identificado em `deploy/tunnel.yml`.
 
 Segredos externos esperados: `pedala_db_password` (senha PostgreSQL), `pedala_database_url` (URL completa usando host `db`) e `pedala_tunnel_credentials` (JSON de credenciais do túnel). Crie com `docker secret create NOME -`, enviando os valores pelo stdin. Não coloque esses valores no Git, em argumentos de shell ou no YAML.
 
 ```sh
-docker build -t pedala:1.0.3 .
+docker build -t pedala:1.1.1 .
 docker stack deploy --resolve-image never -c deploy/stack.yml pedala
 curl --fail https://pedala.enzostana.space/api/health
 docker service ls --filter name=pedala
