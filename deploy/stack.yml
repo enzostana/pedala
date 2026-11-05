@@ -1,0 +1,70 @@
+version: "3.8"
+services:
+  app:
+    image: pedala:1.0.3
+    environment:
+      PUBLIC_URL: https://pedala.enzostana.space
+    secrets: [pedala_database_url]
+    networks: [pedala]
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.hostname == s2951cetriov049]
+      restart_policy:
+        condition: on-failure
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: pedala
+      POSTGRES_DB: pedala
+      POSTGRES_PASSWORD_FILE: /run/secrets/pedala_db_password
+    secrets: [pedala_db_password]
+    volumes: [pedala_data:/var/lib/postgresql/data]
+    networks: [pedala]
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U pedala]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  tunnel:
+    image: cloudflare/cloudflared:2026.8.3
+    command: tunnel --config /etc/cloudflared/config.yml run
+    configs:
+      - source: tunnel_config
+        target: /etc/cloudflared/config.yml
+    secrets:
+      - source: pedala_tunnel_credentials
+        target: tunnel.json
+    networks: [pedala]
+    deploy:
+      replicas: 1
+networks:
+  pedala:
+    driver: overlay
+volumes:
+  pedala_data:
+secrets:
+  pedala_db_password:
+    external: true
+  pedala_database_url:
+    external: true
+  pedala_tunnel_credentials:
+    external: true
+configs:
+  tunnel_config:
+    file: ./tunnel.yml
