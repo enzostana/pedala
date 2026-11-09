@@ -16,7 +16,7 @@ export default function Map({
   position: Position | null;
   view: { kind: string; tick: number };
   expanded: boolean;
-  route?: [number,number][];
+  route?: [number, number][];
 }) {
   const el = useRef<HTMLDivElement>(null),
     map = useRef<L.Map | null>(null),
@@ -34,8 +34,8 @@ export default function Map({
     }).addTo(map.current);
     markers.current = L.layerGroup().addTo(map.current);
     user.current = L.layerGroup().addTo(map.current);
-    useEffect(()=>{if(!map.current||!route?.length)return;const line=L.polyline(route,{color:"#e66d50",weight:7}).addTo(map.current);return()=>{line.remove();};},[route]);
-  return () => {
+
+    return () => {
       map.current?.remove();
       map.current = null;
     };
@@ -101,10 +101,19 @@ export default function Map({
   }, [view]);
   useEffect(() => {
     const t = setTimeout(() => map.current?.invalidateSize(), 100);
-    useEffect(()=>{if(!map.current||!route?.length)return;const line=L.polyline(route,{color:"#e66d50",weight:7}).addTo(map.current);return()=>{line.remove();};},[route]);
-  return () => clearTimeout(t);
+
+    return () => clearTimeout(t);
   }, [expanded]);
-  useEffect(()=>{if(!map.current||!route?.length)return;const line=L.polyline(route,{color:"#e66d50",weight:7}).addTo(map.current);return()=>{line.remove();};},[route]);
+
+  useEffect(() => {
+    if (!map.current || !route?.length) return;
+    const line = L.polyline(route, { color: "#e66d50", weight: 7 }).addTo(
+      map.current,
+    );
+    return () => {
+      line.remove();
+    };
+  }, [route]);
   return (
     <div
       ref={el}
