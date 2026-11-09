@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import Discovery from "./Discovery";
+import RideHUD from "./RideHUD";
 export default function Dashboard() {
   const q = useSearchParams();
   const [data, setData] = useState<any>(null),
@@ -13,6 +14,7 @@ export default function Dashboard() {
     [busy, setBusy] = useState(false),
     [scan, setScan] = useState(false),
     [time, setTime] = useState(Date.now());
+  const [hudOpen,setHudOpen]=useState(true);
   const boot = useRef(false);
   const active = data?.trips.find((t: any) => !t.ended_at);
   const load = useCallback(async () => {
@@ -38,6 +40,7 @@ export default function Dashboard() {
       const j = await r.json();
       if (!r.ok) throw Error(j.error);
       await load();
+      if(path === "start") setHudOpen(true);
       if (path === "finish") {
         setMessage("Bicicleta devolvida. Obrigado por pedalar!");
         setChosen(null);
@@ -115,6 +118,7 @@ export default function Dashboard() {
   };
   return (
     <>
+      {active && hudOpen && <RideHUD trip={active} stations={stations} onClose={()=>setHudOpen(false)} onReturn={s=>{setChosen(s);setHudOpen(false);}}/>}
       <header>
         <a className="logo" href="/">
           PedaLá<span>●</span>
@@ -213,7 +217,7 @@ export default function Dashboard() {
             {active ? (
               <section className="panel ride">
                 <span className="badge">VIAGEM EM ANDAMENTO</span>
-                <h2>Boa pedalada!</h2>
+                <h2>Boa pedalada!</h2><button onClick={()=>setHudOpen(true)}>Voltar à navegação</button>
                 <div className="timer">{duration(active.started_at)}</div>
                 <p>Bike {active.bike} · aluguel gratuito</p>
                 <p>A trava e o deslocamento são simulados.</p>

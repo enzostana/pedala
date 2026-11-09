@@ -66,3 +66,7 @@ Os tiles do mapa dependem do OpenStreetMap e respeitam sua atribuição e cache.
 O mapa solicita uma posição ao abrir, com timeout de dez segundos, e usa a UVA como referência quando não há localização. A posição permanece em memória no navegador. Distâncias são aproximadas em linha reta. Filtros permitem encontrar bikes ou vagas; Como chegar abre um serviço externo com apenas o destino. Imagens geradas são ilustrações de estações fictícias, sem reprodução fiel das fachadas. A estação 07 é UVA — Rua Ibituruna, 108, com quatro bicicletas iniciais e oito vagas.
 
 A migração versionada acrescenta a UVA aos cenários anteriores sem encerrar viagens nem reposicionar bikes existentes. Repetir a inicialização não duplica a estação ou suas bicicletas.
+
+## HUD de pedalada
+
+A retirada abre o mapa da viagem automaticamente. GPS funciona enquanto o HUD está visível, com cronômetro, minimização e seleção de estação para confirmar devolução. Os endpoints de busca e rota exigem GEOAPIFY_API_KEY no servidor. Sem a chave retornam indisponibilidade; nenhum trajeto é inventado. O desenho de rota está preparado, mas navegação por manobras, recálculo, distância restante e recuperação de destino ainda não estão implementados. Esta entrega é a base do HUD, não a navegação completa planejada.

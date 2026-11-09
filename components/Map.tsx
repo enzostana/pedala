@@ -9,12 +9,14 @@ export default function Map({
   position,
   view,
   expanded,
+  route,
 }: {
   stations: Station[];
   onSelect: (s: Station) => void;
   position: Position | null;
   view: { kind: string; tick: number };
   expanded: boolean;
+  route?: [number,number][];
 }) {
   const el = useRef<HTMLDivElement>(null),
     map = useRef<L.Map | null>(null),
@@ -32,7 +34,8 @@ export default function Map({
     }).addTo(map.current);
     markers.current = L.layerGroup().addTo(map.current);
     user.current = L.layerGroup().addTo(map.current);
-    return () => {
+    useEffect(()=>{if(!map.current||!route?.length)return;const line=L.polyline(route,{color:"#e66d50",weight:7}).addTo(map.current);return()=>{line.remove();};},[route]);
+  return () => {
       map.current?.remove();
       map.current = null;
     };
@@ -98,8 +101,10 @@ export default function Map({
   }, [view]);
   useEffect(() => {
     const t = setTimeout(() => map.current?.invalidateSize(), 100);
-    return () => clearTimeout(t);
+    useEffect(()=>{if(!map.current||!route?.length)return;const line=L.polyline(route,{color:"#e66d50",weight:7}).addTo(map.current);return()=>{line.remove();};},[route]);
+  return () => clearTimeout(t);
   }, [expanded]);
+  useEffect(()=>{if(!map.current||!route?.length)return;const line=L.polyline(route,{color:"#e66d50",weight:7}).addTo(map.current);return()=>{line.remove();};},[route]);
   return (
     <div
       ref={el}
