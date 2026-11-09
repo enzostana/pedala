@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   app:
-    image: pedala:1.2.1
+    image: pedala:1.2.2
     environment:
       PUBLIC_URL: https://pedala.enzostana.space
     secrets: [pedala_database_url]

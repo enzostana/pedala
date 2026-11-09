@@ -70,3 +70,7 @@ A migração versionada acrescenta a UVA aos cenários anteriores sem encerrar v
 ## HUD de pedalada
 
 A retirada abre o mapa da viagem automaticamente. GPS funciona enquanto o HUD está visível, com cronômetro, minimização e seleção de estação para confirmar devolução. Os endpoints de busca e rota exigem GEOAPIFY_API_KEY no servidor. Sem a chave retornam indisponibilidade; nenhum trajeto é inventado. O desenho de rota está preparado, mas navegação por manobras, recálculo, distância restante e recuperação de destino ainda não estão implementados. Esta entrega é a base do HUD, não a navegação completa planejada.
+
+### Ativar Geoapify com segurança
+
+Após obter a chave da conta Geoapify, salve-a em arquivo privado no servidor (padrão `~/.geoapify-api-key`). Execute `python3 scripts/configure-geoapify.py`. O script ajusta a permissão para 600, valida a chave no provedor antes de alterar serviços, cria um Docker Secret e aplica a stack com `deploy/geoapify.yml`. A chave não é impressa nem enviada em argumentos de processos. O nome do segredo ativo fica em `~/.local/share/pedala/geoapify-secret-name`; preserve o overlay em implantações posteriores para manter a integração habilitada. Segredos de versões anteriores não são removidos automaticamente.

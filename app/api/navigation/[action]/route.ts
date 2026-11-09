@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import {geoapifyKey} from "@/lib/geoapify";
 import { session, pool } from "@/lib/db";
 export async function POST(
   req: NextRequest,
@@ -9,7 +10,7 @@ export async function POST(
     req.headers.get("origin") !== process.env.PUBLIC_URL
   )
     return Response.json({ error: "Origem inválida" }, { status: 403 });
-  const key = process.env.GEOAPIFY_API_KEY;
+  const key = geoapifyKey();
   if (!key)
     return Response.json(
       { error: "Navegação indisponível: chave Geoapify não configurada." },
