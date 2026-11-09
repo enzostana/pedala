@@ -13,13 +13,13 @@ test("landing, demo isolada, viagem persistente, devolução e QR imprimível", 
   await page.getByLabel("Código da bicicleta").fill("PDL-001");
   await page.getByRole("button", { name: "Confirmar retirada" }).click();
   await expect(
-    page.getByText("VIAGEM EM ANDAMENTO", { exact: true }),
+    page.locator(".ridehud").getByText("VIAGEM EM ANDAMENTO", { exact: true }),
   ).toBeVisible();
   await page.reload();
   await expect(
-    page.getByText("VIAGEM EM ANDAMENTO", { exact: true }),
+    page.locator(".ridehud").getByText("VIAGEM EM ANDAMENTO", { exact: true }),
   ).toBeVisible();
-  await page.getByLabel("Onde você vai devolver?").selectOption("6");
+  await page.getByLabel("Escolher estação para devolver").selectOption("6");
   await page
     .getByRole("button", { name: "Confirmar devolução simulada" })
     .click();
