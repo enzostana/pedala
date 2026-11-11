@@ -1,96 +1,10 @@
-import { NextRequest } from "next/server";
-import {geoapifyKey} from "@/lib/geoapify";
-import { session, pool } from "@/lib/db";
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ action: string }> },
-) {
-  if (
-    req.headers.get("origin") !== req.nextUrl.origin &&
-    req.headers.get("origin") !== process.env.PUBLIC_URL
-  )
-    return Response.json({ error: "Origem inválida" }, { status: 403 });
-  const key = geoapifyKey();
-  if (!key)
-    return Response.json(
-      { error: "Navegação indisponível: chave Geoapify não configurada." },
-      { status: 503 },
-    );
-  try {
-    const v = await session(req.cookies.get("pedala")?.value);
-    if (
-      !(
-        await pool.query(
-          "SELECT id FROM trips WHERE visitor=$1 AND ended_at IS NULL",
-          [v.id],
-        )
-      ).rowCount
-    )
-      return Response.json({ error: "Inicie uma viagem." }, { status: 403 });
-    const { action } = await params;
-    const b = await req.json();
-    let url: URL;
-    if (action === "search") {
-      if (
-        typeof b.text !== "string" ||
-        b.text.length < 3 ||
-        b.text.length > 200
-      )
-        return Response.json({ error: "Endereço inválido" }, { status: 400 });
-      url = new URL("https://api.geoapify.com/v1/geocode/autocomplete");
-      url.searchParams.set("text", b.text + ", Rio de Janeiro");
-      url.searchParams.set("filter", "countrycode:br");
-      url.searchParams.set("limit", "5");
-      url.searchParams.set("lang", "pt");
-    } else if (action === "route") {
-      for (const p of [b.origin, b.destination])
-        if (
-          !p ||
-          !Number.isFinite(p.lat) ||
-          !Number.isFinite(p.lng) ||
-          Math.abs(p.lat) > 90 ||
-          Math.abs(p.lng) > 180
-        )
-          return Response.json(
-            { error: "Coordenadas inválidas" },
-            { status: 400 },
-          );
-      url = new URL("https://api.geoapify.com/v1/routing");
-      url.searchParams.set(
-        "waypoints",
-        `${b.origin.lat},${b.origin.lng}|${b.destination.lat},${b.destination.lng}`,
-      );
-      url.searchParams.set("mode", "bicycle");
-    } else return Response.json({ error: "Não encontrado" }, { status: 404 });
-    url.searchParams.set("apiKey", key);
-    const r = await fetch(url, {
-      signal: AbortSignal.timeout(10000),
-      cache: "no-store",
-    });
-    if (!r.ok)
-      return Response.json(
-        { error: "Serviço de navegação indisponível." },
-        { status: 503 },
-      );
-    const data = await r.json();
-    if (action === "search")
-      return Response.json(
-        {
-          results: data.features
-            .filter((f: any) => f.properties.city === "Rio de Janeiro")
-            .map((f: any) => ({
-              name: f.properties.formatted,
-              lat: f.properties.lat,
-              lng: f.properties.lon,
-            })),
-        },
-        { headers: { "Cache-Control": "no-store" } },
-      );
-    return Response.json(data, { headers: { "Cache-Control": "no-store" } });
-  } catch {
-    return Response.json(
-      { error: "Não foi possível calcular a navegação." },
-      { status: 503 },
-    );
-  }
-}
+import {NextRequest} from 'next/server';
+import {session,pool} from '@/lib/db';
+import {catalog} from '@/lib/stations';
+import {decodeValhalla} from '@/lib/navigation';
+export async function POST(req:NextRequest,{params}:{params:Promise<{action:string}>}){
+ if(req.headers.get('origin')!==req.nextUrl.origin&&req.headers.get('origin')!==process.env.PUBLIC_URL)return Response.json({error:'Origem inválida'},{status:403});
+ try{const v=await session(req.cookies.get('pedala')?.value);if(!(await pool.query('SELECT id FROM trips WHERE visitor=$1 AND ended_at IS NULL',[v.id])).rowCount)return Response.json({error:'Inicie uma viagem.'},{status:403});const {action}=await params,b=await req.json();
+ if(action==='search'){if(typeof b.text!=='string'||b.text.trim().length<3||b.text.length>200)return Response.json({error:'Digite pelo menos três caracteres.'},{status:400});const q=b.text.trim();const stations=catalog.filter(s=>(s.name+' '+s.address).toLocaleLowerCase('pt-BR').includes(q.toLocaleLowerCase('pt-BR'))).map(s=>({name:s.name,lat:s.lat,lng:s.lng,stationId:s.id}));const url=new URL('/search',process.env.NOMINATIM_URL||'http://nominatim:8080');url.searchParams.set('q',q+', Rio de Janeiro, RJ, Brasil');url.searchParams.set('format','jsonv2');url.searchParams.set('addressdetails','1');url.searchParams.set('limit','5');const response=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(10000)});if(!response.ok)throw Error('search');const data=await response.json();const results=data.filter((x:any)=>{const a=x.address||{};return (a.city||a.municipality||a.town)==='Rio de Janeiro';}).map((x:any)=>({name:x.display_name,lat:Number(x.lat),lng:Number(x.lon),approximate:x.addresstype==='road'}));return Response.json({results:[...stations,...results].slice(0,5)},{headers:{'Cache-Control':'no-store'}});}
+ if(action==='route'){for(const x of [b.origin,b.destination])if(!x||!Number.isFinite(x.lat)||!Number.isFinite(x.lng)||x.lat < -23.1||x.lat > -22.7||x.lng < -43.85||x.lng > -43.0)return Response.json({error:'Posição fora da área de navegação.'},{status:400});const url=new URL('/route',process.env.VALHALLA_URL||'http://valhalla:8002');const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({locations:[{lat:b.origin.lat,lon:b.origin.lng},{lat:b.destination.lat,lon:b.destination.lng}],costing:'bicycle',directions_options:{units:'kilometers',language:'pt-BR'}}),cache:'no-store',signal:AbortSignal.timeout(10000)});if(!res.ok)throw Error('route');const trip=(await res.json()).trip;if(!trip?.legs?.length)throw Error('route');let coordinates:number[][]=[],maneuvers:any[]=[];for(const leg of trip.legs){const pts=decodeValhalla(leg.shape);const offset=coordinates.length;coordinates.push(...pts);for(const m of leg.maneuvers||[])maneuvers.push({instruction:m.instruction,type:m.type,begin:offset+m.begin_shape_index,end:offset+m.end_shape_index,distanceMeters:m.length*1000,durationSeconds:m.time});}return Response.json({coordinates,distanceMeters:trip.summary.length*1000,durationSeconds:trip.summary.time,maneuvers},{headers:{'Cache-Control':'no-store'}});}
+ return Response.json({error:'Não encontrado'},{status:404});}catch{return Response.json({error:'Busca ou rota indisponível. Tente novamente.'},{status:503});}}
