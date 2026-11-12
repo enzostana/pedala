@@ -42,6 +42,8 @@ export default function Dashboard() {
       await load();
       if (path === "start") setHudOpen(true);
       if (path === "finish") {
+        if (active)
+          sessionStorage.removeItem("pedala:destination:" + active.id);
         setMessage("Bicicleta devolvida. Obrigado por pedalar!");
         setChosen(null);
       }

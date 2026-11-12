@@ -10,6 +10,7 @@ export default function Map({
   view,
   expanded,
   route,
+  onDrag,
 }: {
   stations: Station[];
   onSelect: (s: Station) => void;
@@ -17,6 +18,7 @@ export default function Map({
   view: { kind: string; tick: number };
   expanded: boolean;
   route?: [number, number][];
+  onDrag?: () => void;
 }) {
   const el = useRef<HTMLDivElement>(null),
     map = useRef<L.Map | null>(null),
@@ -99,6 +101,18 @@ export default function Map({
       map.current?.setView([u.lat, u.lng], 15);
     }
   }, [view]);
+  useEffect(() => {
+    const m = map.current;
+    if (!m || !onDrag) return;
+    m.on("dragstart", onDrag);
+    return () => {
+      m.off("dragstart", onDrag);
+    };
+  }, [onDrag]);
+  useEffect(() => {
+    if (view.kind === "route" && route?.length)
+      map.current?.fitBounds(L.latLngBounds(route), { padding: [40, 40] });
+  }, [view, route]);
   useEffect(() => {
     const t = setTimeout(() => map.current?.invalidateSize(), 100);
 

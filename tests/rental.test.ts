@@ -126,3 +126,121 @@ test("migração UVA é idempotente e preserva viagem ativa", async () => {
     1,
   );
 });
+test("API local valida sessão, busca, rota, limite municipal e quota", async (t) => {
+  const { NextRequest } = await import("next/server");
+  const { POST } = await import("../app/api/navigation/[action]/route");
+  const v = await session();
+  await transaction((c) => start(c, v.id, "PDL-001"));
+  let routeCalls = 0;
+  const mock = t.mock.method(
+    globalThis,
+    "fetch",
+    async (input: any, options: any) => {
+      const url = new URL(String(input));
+      if (url.pathname === "/search" && url.searchParams.has("polygon_geojson"))
+        return Response.json([
+          {
+            name: "Rio de Janeiro",
+            geojson: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [-44, -23.2],
+                  [-43, -23.2],
+                  [-43, -22.6],
+                  [-44, -22.6],
+                  [-44, -23.2],
+                ],
+              ],
+            },
+            address: { city: "Rio de Janeiro" },
+          },
+        ]);
+      if (url.pathname === "/search")
+        return Response.json([
+          {
+            display_name: "Rua Ibituruna, Rio de Janeiro",
+            lat: "-22.9118",
+            lon: "-43.2213",
+            addresstype: "road",
+            address: { city: "Rio de Janeiro" },
+          },
+          {
+            display_name: "Niterói",
+            lat: "-22.89",
+            lon: "-43.12",
+            address: { city: "Niterói" },
+          },
+        ]);
+      if (url.pathname === "/route") {
+        routeCalls++;
+        const body = JSON.parse(options.body);
+        assert.equal(body.costing, "bicycle");
+        assert.equal(body.language, "pt-BR");
+        return Response.json({
+          trip: {
+            summary: { length: 1.2, time: 300 },
+            legs: [
+              {
+                shape: "_c`|@_gayB??",
+                maneuvers: [
+                  {
+                    instruction: "Siga",
+                    type: 1,
+                    begin_shape_index: 0,
+                    end_shape_index: 1,
+                    length: 1.2,
+                    time: 300,
+                  },
+                ],
+              },
+            ],
+          },
+        });
+      }
+      throw Error("Unexpected URL");
+    },
+  );
+  const call = (action: string, body: any, cookie = v.id) =>
+    POST(
+      new NextRequest("http://localhost/api/navigation/" + action, {
+        method: "POST",
+        headers: {
+          origin: "http://localhost",
+          "content-type": "application/json",
+          cookie: "pedala=" + cookie,
+        },
+        body: JSON.stringify(body),
+      }),
+      { params: Promise.resolve({ action }) },
+    );
+  const search = await call("search", { text: "Ibituruna" });
+  assert.equal(search.status, 200);
+  const results = (await search.json()).results;
+  assert.ok(results.some((x: any) => x.name.includes("Ibituruna")));
+  assert.ok(!results.some((x: any) => x.name === "Niterói"));
+  assert.equal((await call("search", { text: "ab" })).status, 400);
+  assert.equal(
+    (await call("search", { text: "rua" }, "bad-cookie")).status,
+    403,
+  );
+  const origin = { lat: -22.9118, lng: -43.2213 },
+    destination = { lat: -22.92, lng: -43.2 };
+  assert.equal(
+    (await call("route", { origin, destination: { lat: -10, lng: -60 } }))
+      .status,
+    400,
+  );
+  const route = await call("route", { origin, destination });
+  assert.equal(route.status, 200);
+  const data = await route.json();
+  assert.equal(data.distanceMeters, 1200);
+  assert.equal(data.durationSeconds, 300);
+  assert.equal(data.maneuvers[0].instruction, "Siga");
+  assert.equal(data.coordinates.length, 2);
+  assert.equal(routeCalls, 1);
+  assert.equal((await call("route", { origin, destination })).status, 200);
+  assert.equal((await call("route", { origin, destination })).status, 200);
+  assert.equal((await call("route", { origin, destination })).status, 429);
+  mock.mock.restore();
+});
