@@ -1,3 +1,4 @@
+import { openHudOptions } from "./hud-helper";
 import { test, expect } from "@playwright/test";
 test("landing, demo isolada, viagem persistente, devolução e QR imprimível", async ({
   page,
@@ -19,6 +20,7 @@ test("landing, demo isolada, viagem persistente, devolução e QR imprimível", 
   await expect(
     page.locator(".ridehud").getByText("VIAGEM EM ANDAMENTO", { exact: true }),
   ).toBeVisible();
+  await openHudOptions(page);
   await page.getByLabel("Escolher estação para devolver").selectOption("6");
   await page
     .getByRole("button", { name: "Confirmar devolução simulada" })
@@ -103,17 +105,31 @@ for (const code of [1, 2, 3])
     }, code);
     await page.goto("/app");
     await expect(
-      page
-        .getByRole("status")
-        .filter({
-          hasText:
-            code === 1
-              ? "Localização não autorizada"
-              : "Não foi possível obter sua localização",
-        }),
+      page.getByRole("status").filter({
+        hasText:
+          code === 1
+            ? "Localização não autorizada"
+            : "Não foi possível obter sua localização",
+      }),
     ).toBeVisible();
     await expect(page.locator(".station")).toHaveCount(7);
     await page.getByRole("button", { name: "Ir para UVA" }).click();
     await expect(page.locator(".map-pin")).toHaveCount(7);
   });
-test('sete imagens ilustrativas disponíveis e leves',async({page})=>{for(let id=1;id<=7;id++){const r=await page.request.get('/stations/'+id+'.webp');expect(r.ok()).toBeTruthy();expect(r.headers()['content-type']).toContain('image/webp');expect((await r.body()).length).toBeLessThan(250*1024);}await page.goto('/app');await page.locator('.station').last().scrollIntoViewIfNeeded();await expect(page.locator('.stationphoto').last()).toBeVisible();expect(await page.locator('.stationphoto').last().evaluate((img:HTMLImageElement)=>img.naturalWidth)).toBeGreaterThan(0);});
+test("sete imagens ilustrativas disponíveis e leves", async ({ page }) => {
+  for (let id = 1; id <= 7; id++) {
+    const r = await page.request.get("/stations/" + id + ".webp");
+    expect(r.ok()).toBeTruthy();
+    expect(r.headers()["content-type"]).toContain("image/webp");
+    expect((await r.body()).length).toBeLessThan(250 * 1024);
+  }
+  await page.goto("/app");
+  await page.locator(".station").last().scrollIntoViewIfNeeded();
+  await expect(page.locator(".stationphoto").last()).toBeVisible();
+  expect(
+    await page
+      .locator(".stationphoto")
+      .last()
+      .evaluate((img: HTMLImageElement) => img.naturalWidth),
+  ).toBeGreaterThan(0);
+});

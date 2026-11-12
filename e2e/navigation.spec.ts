@@ -1,3 +1,4 @@
+import { openHudOptions } from "./hud-helper";
 import { test, expect } from "@playwright/test";
 test("HUD segue rota, recalcula desvio, restaura destino e mantém aluguel ativo", async ({
   page,
@@ -79,6 +80,7 @@ test("HUD segue rota, recalcula desvio, restaura destino e mantém aluguel ativo
   await page.getByLabel("Código da bicicleta").fill("PDL-001");
   await page.getByRole("button", { name: "Confirmar retirada" }).click();
   await expect(page.locator(".ridehud")).toBeVisible();
+  await openHudOptions(page);
   await page.getByLabel("Buscar destino").fill("teste");
   await page.getByRole("button", { name: "Buscar destino" }).click();
   await page.getByRole("button", { name: "Destino de teste" }).click();
@@ -86,9 +88,7 @@ test("HUD segue rota, recalcula desvio, restaura destino e mantém aluguel ativo
   await expect(
     page.locator('.ridehud .leaflet-overlay-pane path[stroke="#e66d50"]'),
   ).toHaveCount(1);
-  await expect(page.locator(".hudtop")).toContainText(
-    "Vire à direita",
-  );
+  await expect(page.locator(".hudtop")).toContainText("Vire à direita");
   await page.evaluate(() => (window as any).gpsPoint(-22.9108, -43.2213, 0));
   await page.evaluate(() => (window as any).gpsPoint(-22.9108, -43.2213, 6000));
   await page.evaluate(() => (window as any).gpsPoint(-22.9108, -43.2213, 5000));
@@ -106,8 +106,10 @@ test("HUD segue rota, recalcula desvio, restaura destino e mantém aluguel ativo
     }),
   ).toBeVisible();
   await expect(page.locator(".ridehud")).toBeVisible();
+  await openHudOptions(page);
   await page.getByRole("button", { name: "Cancelar rota" }).click();
   await expect(page.locator(".ridehud")).toBeVisible();
+  await openHudOptions(page);
   await page.getByLabel("Escolher estação para devolver").selectOption("6");
   await page
     .getByRole("button", { name: "Confirmar devolução simulada" })
@@ -142,6 +144,7 @@ test("GPS negado permite escolher destino e devolver sem encerrar antecipadament
   await expect(
     page.locator(".ridehud").getByText("GPS indisponível", { exact: false }),
   ).toBeVisible();
+  await openHudOptions(page);
   await page.getByLabel("Navegar até uma estação").selectOption("7");
   await expect(page.locator(".hudbottom")).toContainText(
     "Aguardando sinal de GPS preciso",
@@ -154,6 +157,7 @@ test("GPS negado permite escolher destino e devolver sem encerrar antecipadament
   await expect(page.locator(".hudbottom")).toContainText(
     "UVA — Rua Ibituruna, 108",
   );
+  await openHudOptions(page);
   await page.getByLabel("Escolher estação para devolver").selectOption("6");
   await page
     .getByRole("button", { name: "Confirmar devolução simulada" })
