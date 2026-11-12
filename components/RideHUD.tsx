@@ -27,6 +27,12 @@ export default function RideHUD({
   onClose: () => void;
   onReturn: (s: Station) => void;
 }) {
+  const [optionsOpen, setOptionsOpen] = useState(false),
+    [dark, setDark] = useState(true);
+  useEffect(() => {
+    const saved = localStorage.getItem("pedala:map-dark");
+    if (saved !== null) setDark(saved === "true");
+  }, []);
   const [query, setQuery] = useState(""),
     [results, setResults] = useState<Destination[]>([]),
     [route, setRoute] = useState<NavigationRoute | null>(null),
@@ -100,6 +106,7 @@ export default function RideHUD({
         setResults([]);
         sampleRef.current = [];
         setMessage("Rota pronta.");
+        setOptionsOpen(false);
       } catch (e) {
         if ((e as Error).name !== "AbortError")
           setMessage(
@@ -285,7 +292,11 @@ export default function RideHUD({
   const currentManeuver =
     route?.maneuvers.findIndex((m) => m.end > progress.index) ?? -1;
   const maneuver =
-    route?.maneuvers[currentManeuver < 0 ? route.maneuvers.length - 1 : Math.min(currentManeuver + 1, route.maneuvers.length - 1)];
+    route?.maneuvers[
+      currentManeuver < 0
+        ? route.maneuvers.length - 1
+        : Math.min(currentManeuver + 1, route.maneuvers.length - 1)
+    ];
   const segment =
     route && maneuver
       ? remainingMeters(
@@ -312,17 +323,33 @@ export default function RideHUD({
     setMessage("Navegação cancelada; o aluguel continua ativo.");
   }
   return (
-    <section className="ridehud" aria-label="Navegação da pedalada">
+    <section
+      className="ridehud"
+      data-theme={dark ? "dark" : "light"}
+      aria-label="Navegação da pedalada"
+    >
       <div className="hudtop">
         <strong>
           {maneuver && !arrived
             ? `${arrow} ${maneuver.instruction} · ${formatDistance(segment)}`
             : "Boa pedalada! ↗"}
         </strong>
-        <button onClick={onClose}>Minimizar mapa</button>
+        <div className="hudtopactions">
+          <button
+            aria-label={dark ? "Usar mapa claro" : "Usar mapa escuro"}
+            onClick={() => {
+              setDark(!dark);
+              localStorage.setItem("pedala:map-dark", String(!dark));
+            }}
+          >
+            {dark ? "☀" : "☾"}
+          </button>
+          <button onClick={onClose}>Minimizar mapa</button>
+        </div>
       </div>
       <Map
         stations={stations}
+        dark={dark}
         route={routePoints}
         position={position}
         view={view}
@@ -333,11 +360,13 @@ export default function RideHUD({
         }
       />
       <div className="hudbottom">
-        <span className="badge">VIAGEM EM ANDAMENTO</span>
-        <h2>
-          {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}
-        </h2>
-        <p>Bike {trip.bike} · aluguel gratuito</p>
+        <div className="hudcompact">
+          <span className="badge">VIAGEM EM ANDAMENTO</span>
+          <h2>
+            {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}
+          </h2>
+          <p>Bike {trip.bike} · grátis</p>
+        </div>
         {destination && (
           <p>
             <strong>{destination.name}</strong>
@@ -356,100 +385,111 @@ export default function RideHUD({
             })}
           </p>
         )}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void search();
-          }}
-        >
-          <input
-            aria-label="Buscar destino"
-            placeholder="Endereço no Rio"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          <button>Buscar destino</button>
-        </form>
-        <div className="hudresults">
-          {results.map((d, i) => (
-            <button key={i} onClick={() => navigate(d)}>
-              {d.name}
-              {d.stationId
-                ? " — Estação " + String(d.stationId).padStart(2, "0")
-                : ""}
-              {d.approximate ? " · localização aproximada" : ""}
-            </button>
-          ))}
-        </div>
-        <p role="status">
+        <p role="status" className="hudstatus">
           {message} {gps}
         </p>
-        <div className="hudbuttons">
-          <button onClick={() => setGpsRetry((v) => v + 1)}>
-            Atualizar GPS
-          </button>
-          <button onClick={recenter}>
-            {follow ? "Recentralizar" : "Retomar acompanhamento"}
-          </button>
-          {route && (
-            <>
-              <button
-                onClick={() =>
-                  setView((v) => ({ kind: "route", tick: v.tick + 1 }))
-                }
-              >
-                Ver rota inteira
+        <button
+          className="hudoptionstoggle"
+          aria-expanded={optionsOpen}
+          aria-controls="hudoptions"
+          onClick={() => setOptionsOpen((v) => !v)}
+        >
+          {optionsOpen ? "Recolher opções ▾" : "Destino e opções ▴"}
+        </button>
+        <div id="hudoptions" hidden={!optionsOpen}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void search();
+            }}
+          >
+            <input
+              aria-label="Buscar destino"
+              placeholder="Endereço no Rio"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <button>Buscar destino</button>
+          </form>
+          <div className="hudresults">
+            {results.map((d, i) => (
+              <button key={i} onClick={() => navigate(d)}>
+                {d.name}
+                {d.stationId
+                  ? " — Estação " + String(d.stationId).padStart(2, "0")
+                  : ""}
+                {d.approximate ? " · localização aproximada" : ""}
               </button>
-              <button onClick={cancel}>Cancelar rota</button>
-            </>
-          )}
+            ))}
+          </div>
+
+          <div className="hudbuttons">
+            <button onClick={() => setGpsRetry((v) => v + 1)}>
+              Atualizar GPS
+            </button>
+            <button onClick={recenter}>
+              {follow ? "Recentralizar" : "Retomar acompanhamento"}
+            </button>
+            {route && (
+              <>
+                <button
+                  onClick={() =>
+                    setView((v) => ({ kind: "route", tick: v.tick + 1 }))
+                  }
+                >
+                  Ver rota inteira
+                </button>
+                <button onClick={cancel}>Cancelar rota</button>
+              </>
+            )}
+          </div>
+          <label htmlFor="huddestination">Navegar até uma estação</label>
+          <select
+            id="huddestination"
+            value=""
+            onChange={(e) => {
+              const s = stations.find((s) => s.id === Number(e.target.value));
+              if (s)
+                void navigate({
+                  name: s.name,
+                  lat: s.lat,
+                  lng: s.lng,
+                  stationId: s.id,
+                });
+            }}
+          >
+            <option value="">Escolha o destino</option>
+            {stations.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} — Estação {String(s.id).padStart(2, "0")} ·{" "}
+                {s.capacity - s.available} vagas
+              </option>
+            ))}
+          </select>
+          <label htmlFor="hudstation">Escolher estação para devolver</label>
+          <select
+            id="hudstation"
+            value=""
+            onChange={(e) => {
+              const s = stations.find((s) => s.id === Number(e.target.value));
+              if (s) {
+                onReturn(s);
+              }
+            }}
+          >
+            <option value="">Selecione uma estação</option>
+            {stations.map((s) => (
+              <option
+                key={s.id}
+                value={s.id}
+                disabled={s.available >= s.capacity}
+              >
+                {s.name} — Estação {String(s.id).padStart(2, "0")} ·{" "}
+                {s.capacity - s.available} vagas
+              </option>
+            ))}
+          </select>
         </div>
-        <label htmlFor="huddestination">Navegar até uma estação</label>
-        <select
-          id="huddestination"
-          value=""
-          onChange={(e) => {
-            const s = stations.find((s) => s.id === Number(e.target.value));
-            if (s)
-              void navigate({
-                name: s.name,
-                lat: s.lat,
-                lng: s.lng,
-                stationId: s.id,
-              });
-          }}
-        >
-          <option value="">Escolha o destino</option>
-          {stations.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name} — Estação {String(s.id).padStart(2, "0")} ·{" "}
-              {s.capacity - s.available} vagas
-            </option>
-          ))}
-        </select>
-        <label htmlFor="hudstation">Escolher estação para devolver</label>
-        <select
-          id="hudstation"
-          value=""
-          onChange={(e) => {
-            const s = stations.find((s) => s.id === Number(e.target.value));
-            if (s) {
-              onReturn(s);
-            }
-          }}
-        >
-          <option value="">Selecione uma estação</option>
-          {stations.map((s) => (
-            <option
-              key={s.id}
-              value={s.id}
-              disabled={s.available >= s.capacity}
-            >
-              {s.name} — Estação {String(s.id).padStart(2, "0")} ·{" "}
-              {s.capacity - s.available} vagas
-            </option>
-          ))}
-        </select>
       </div>
     </section>
   );

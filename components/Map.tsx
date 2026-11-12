@@ -11,6 +11,7 @@ export default function Map({
   expanded,
   route,
   onDrag,
+  dark = false,
 }: {
   stations: Station[];
   onSelect: (s: Station) => void;
@@ -19,6 +20,7 @@ export default function Map({
   expanded: boolean;
   route?: [number, number][];
   onDrag?: () => void;
+  dark?: boolean;
 }) {
   const el = useRef<HTMLDivElement>(null),
     map = useRef<L.Map | null>(null),
@@ -131,7 +133,7 @@ export default function Map({
   return (
     <div
       ref={el}
-      className="map"
+      className={dark ? "map map-dark" : "map"}
       aria-label="Mapa de estações fictícias no Rio de Janeiro"
     />
   );
