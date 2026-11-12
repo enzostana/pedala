@@ -87,7 +87,7 @@ test("HUD segue rota, recalcula desvio, restaura destino e mantém aluguel ativo
     page.locator('.ridehud .leaflet-overlay-pane path[stroke="#e66d50"]'),
   ).toHaveCount(1);
   await expect(page.locator(".hudtop")).toContainText(
-    "Siga pela Rua Ibituruna",
+    "Vire à direita",
   );
   await page.evaluate(() => (window as any).gpsPoint(-22.9108, -43.2213, 0));
   await page.evaluate(() => (window as any).gpsPoint(-22.9108, -43.2213, 6000));
