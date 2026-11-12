@@ -67,10 +67,8 @@ O mapa solicita uma posição ao abrir, com timeout de dez segundos, e usa a UVA
 
 A migração versionada acrescenta a UVA aos cenários anteriores sem encerrar viagens nem reposicionar bikes existentes. Repetir a inicialização não duplica a estação ou suas bicicletas.
 
-## HUD de pedalada
+## HUD de pedalada e navegação local
 
-A retirada abre o mapa da viagem automaticamente. GPS funciona enquanto o HUD está visível, com cronômetro, minimização e seleção de estação para confirmar devolução. Os endpoints de busca e rota exigem GEOAPIFY_API_KEY no servidor. Sem a chave retornam indisponibilidade; nenhum trajeto é inventado. O desenho de rota está preparado, mas navegação por manobras, recálculo, distância restante e recuperação de destino ainda não estão implementados. Esta entrega é a base do HUD, não a navegação completa planejada.
+A retirada abre o HUD de mapa e GPS. Busca e rotas de bicicleta usam Nominatim e Valhalla executados no servidor com dados OpenStreetMap do Rio, sem chave de serviço externo. A posição não é gravada no banco nem nos logs. O destino fica na sessão do navegador enquanto a viagem estiver ativa. O fundo visual continua usando tiles OpenStreetMap.
 
-### Ativar Geoapify com segurança
-
-Após obter a chave da conta Geoapify, salve-a em arquivo privado no servidor (padrão `~/.geoapify-api-key`). Execute `python3 scripts/configure-geoapify.py`. O script ajusta a permissão para 600, valida a chave no provedor antes de alterar serviços, cria um Docker Secret e aplica a stack com `deploy/geoapify.yml`. A chave não é impressa nem enviada em argumentos de processos. O nome do segredo ativo fica em `~/.local/share/pedala/geoapify-secret-name`; preserve o overlay em implantações posteriores para manter a integração habilitada. Segredos de versões anteriores não são removidos automaticamente.
+Navegação usa GPS real e requer a página visível. O aluguel continua ativo ao chegar ou cancelar a rota; selecione uma estação com vaga e confirme a devolução. A malha de dados pode não incluir todas as ruas ou acessos para bicicletas.
